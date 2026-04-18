@@ -1,8 +1,28 @@
-import { type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
+import { type NextRequest, NextResponse } from 'next/server'
 
-export async function proxy(request: NextRequest) {
-  return await updateSession(request)
+const PROJECT_REF = 'klpqduowexrnwjnpvnav'
+
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  const isAuthRoute = pathname.startsWith('/auth')
+  const isPublicRoute = pathname === '/'
+
+  // Check for Supabase session cookie (set by @supabase/ssr)
+  const cookies = request.cookies
+  const hasSession =
+    cookies.has(`sb-${PROJECT_REF}-auth-token`) ||
+    cookies.has(`sb-${PROJECT_REF}-auth-token.0`)
+
+  if (!hasSession && !isAuthRoute && !isPublicRoute) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
+  }
+
+  if (hasSession && isAuthRoute) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  return NextResponse.next()
 }
 
 export const config = {
