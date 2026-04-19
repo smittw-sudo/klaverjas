@@ -1,4 +1,4 @@
-'use client'
+
 
 import type { TrumpSuit, KraakType } from '@/lib/supabase/types'
 import { TRUMP_DISPLAY } from '@/lib/utils/trumpDisplay'

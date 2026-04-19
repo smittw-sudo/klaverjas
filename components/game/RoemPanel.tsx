@@ -1,4 +1,4 @@
-'use client'
+
 
 import type { RoemType } from '@/lib/supabase/types'
 import { ROEM_VALUES, ROEM_LABELS, TRUMP_DISPLAY } from '@/lib/utils/trumpDisplay'

@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import type { Hand, RoemEntry, SeatPosition, Database } from '@/lib/supabase/types'
 
 export async function getHands(gameId: string): Promise<Hand[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('hands')
     .select('*')
@@ -13,7 +13,7 @@ export async function getHands(gameId: string): Promise<Hand[]> {
 }
 
 export async function getHand(id: string): Promise<Hand | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data } = await supabase
     .from('hands')
     .select('*')
@@ -23,7 +23,7 @@ export async function getHand(id: string): Promise<Hand | null> {
 }
 
 export async function saveHand(input: Omit<Hand, 'id' | 'created_at'>): Promise<Hand> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('hands')
     .upsert(input, { onConflict: 'game_id,hand_number' })
@@ -34,7 +34,7 @@ export async function saveHand(input: Omit<Hand, 'id' | 'created_at'>): Promise<
 }
 
 export async function updateHand(id: string, updates: Database['public']['Tables']['hands']['Update']): Promise<Hand> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('hands')
     .update(updates)
@@ -46,7 +46,7 @@ export async function updateHand(id: string, updates: Database['public']['Tables
 }
 
 export async function deleteHand(id: string): Promise<void> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { error } = await supabase
     .from('hands')
     .delete()
@@ -58,7 +58,7 @@ export async function saveRoemEntries(
   handId: string,
   entries: Array<{ team: 'spelend' | 'tegen'; roem_type: RoemEntry['roem_type']; punten: number; afgekeurd?: boolean }>
 ): Promise<void> {
-  const supabase = await createClient()
+  const supabase = createClient()
   // Delete existing entries for this hand first
   await supabase.from('roem_entries').delete().eq('hand_id', handId)
   if (entries.length === 0) return
@@ -69,7 +69,7 @@ export async function saveRoemEntries(
 }
 
 export async function getRoemEntries(handId: string): Promise<RoemEntry[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('roem_entries')
     .select('*')

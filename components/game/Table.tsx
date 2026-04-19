@@ -1,4 +1,4 @@
-'use client'
+
 
 import type { Player } from '@/lib/supabase/types'
 

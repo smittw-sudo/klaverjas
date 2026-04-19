@@ -1,15 +1,24 @@
-'use client'
-
 import { useState } from 'react'
-import { deleteGameAction } from '@/app/games/actions'
+import { deleteGame } from '@/lib/db/games'
 
-export default function DeleteGameButton({ gameId }: { gameId: string }) {
+interface Props {
+  gameId: string
+  onDeleted?: () => void
+}
+
+export default function DeleteGameButton({ gameId, onDeleted }: Props) {
   const [loading, setLoading] = useState(false)
 
   async function handleDelete() {
     if (!confirm('Potje verwijderen? Dit kan niet ongedaan worden gemaakt.')) return
     setLoading(true)
-    await deleteGameAction(gameId)
+    try {
+      await deleteGame(gameId)
+      onDeleted?.()
+    } catch {
+      alert('Verwijderen mislukt')
+      setLoading(false)
+    }
   }
 
   return (

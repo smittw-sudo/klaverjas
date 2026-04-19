@@ -1,34 +1,17 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import type { Player } from '@/lib/supabase/types'
 
 export async function getPlayers(): Promise<Player[]> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('players')
-    .select('*')
-    .order('display_name')
+  const supabase = createClient()
+  const { data, error } = await supabase.from('players').select('*').order('display_name')
   if (error) throw error
   return data
 }
 
-export async function createPlayer(display_name: string): Promise<Player> {
-  const supabase = await createClient()
+export async function createPlayer(display_name: string, is_guest = false): Promise<Player> {
+  const supabase = createClient()
   const { data, error } = await supabase
-    .from('players')
-    .insert({ display_name, is_guest: false })
-    .select()
-    .single()
-  if (error) throw error
-  return data
-}
-
-export async function createGuestPlayer(display_name: string): Promise<Player> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('players')
-    .insert({ display_name, is_guest: true })
-    .select()
-    .single()
+    .from('players').insert({ display_name, is_guest }).select().single()
   if (error) throw error
   return data
 }

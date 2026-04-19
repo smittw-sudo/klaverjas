@@ -1,4 +1,4 @@
-'use client'
+
 
 import type { TrumpSuit } from '@/lib/supabase/types'
 import { TRUMP_DISPLAY, ROEM_LABELS } from '@/lib/utils/trumpDisplay'
