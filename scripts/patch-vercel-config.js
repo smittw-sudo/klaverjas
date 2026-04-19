@@ -5,10 +5,16 @@
 const fs = require('fs')
 const path = require('path')
 
-const configPath = path.join(process.cwd(), '.next', 'output', 'config.json')
+const cwd = process.cwd()
+const configPath = path.join(cwd, '.next', 'output', 'config.json')
+
+console.log('[patch-vercel-config] cwd:', cwd)
+console.log('[patch-vercel-config] VERCEL env:', process.env.VERCEL)
+console.log('[patch-vercel-config] config path:', configPath)
+console.log('[patch-vercel-config] config exists:', fs.existsSync(configPath))
 
 if (!fs.existsSync(configPath)) {
-  console.error('[patch-vercel-config] ERROR: config.json not found at', configPath)
+  console.error('[patch-vercel-config] ERROR: config.json not found — cannot patch')
   process.exit(1)
 }
 
@@ -25,20 +31,25 @@ cfg.routes = cfg.routes.filter(r => !(
 ))
 
 const removed = before - cfg.routes.length
-console.log(`[patch-vercel-config] Removed ${removed} blocking route(s) from config.json (${before} → ${cfg.routes.length})`)
+console.log(`[patch-vercel-config] Removed ${removed} blocking route(s) (${before} → ${cfg.routes.length})`)
 
 if (removed === 0) {
-  console.warn('[patch-vercel-config] WARNING: expected to remove 1 route but removed 0 — check adapter output')
+  console.warn('[patch-vercel-config] WARNING: removed 0 routes — adapter output may have changed')
 }
 
 fs.writeFileSync(configPath, JSON.stringify(cfg))
 
 // Copy to /vercel/output (the Vercel Build Output API directory)
-if (process.env.VERCEL) {
-  const src = path.join(process.cwd(), '.next', 'output')
-  const dest = '/vercel/output'
-  console.log(`[patch-vercel-config] Copying ${src} → ${dest}`)
+const src = path.join(cwd, '.next', 'output')
+const dest = process.env.VERCEL ? '/vercel/output' : path.join(cwd, '.vercel', 'output')
+
+console.log(`[patch-vercel-config] Copying ${src} → ${dest}`)
+try {
+  fs.mkdirSync(path.dirname(dest), { recursive: true })
   fs.rmSync(dest, { recursive: true, force: true })
   fs.cpSync(src, dest, { recursive: true, dereference: true })
-  console.log('[patch-vercel-config] Done.')
+  console.log('[patch-vercel-config] Copy complete. Files:', fs.readdirSync(dest).join(', '))
+} catch (e) {
+  console.error('[patch-vercel-config] Copy failed:', e.message)
+  process.exit(1)
 }
