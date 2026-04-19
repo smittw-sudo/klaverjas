@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
+import { createRequire } from 'module';
 
-const nextConfig: NextConfig = {};
+const require = createRequire(import.meta.url);
+
+const nextConfig: NextConfig = process.env.VERCEL ? {
+  adapterPath: require.resolve('@next-community/adapter-vercel'),
+} : {};
 
 export default nextConfig;
