@@ -19,7 +19,8 @@ export default function PlayersPage() {
 
   async function loadPlayers() {
     const supabase = createClient()
-    const { data } = await supabase.from('players').select('*').order('display_name')
+    const { data, error } = await supabase.from('players').select('*').order('display_name')
+    if (error) setError('Laden mislukt: ' + error.message)
     if (data) setPlayers(data)
   }
 
