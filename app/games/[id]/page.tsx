@@ -1,25 +1,59 @@
-import { notFound } from 'next/navigation'
-import { getGame, getGamePlayers } from '@/lib/db/games'
-import { getHands } from '@/lib/db/hands'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import PageHeader from '@/components/ui/PageHeader'
 import Scoreboard from '@/components/game/Scoreboard'
 import BottomNav from '@/components/ui/BottomNav'
+import type { Game, Hand } from '@/lib/supabase/types'
 
-export default async function GamePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const [game, gamePlayers, hands] = await Promise.all([
-    getGame(id),
-    getGamePlayers(id),
-    getHands(id),
-  ])
+interface Player {
+  id: string
+  display_name: string
+  seat_position: number
+}
 
-  if (!game) notFound()
+export default function GamePage() {
+  const { id } = useParams<{ id: string }>()
+  const [game, setGame] = useState<Game | null>(null)
+  const [players, setPlayers] = useState<Player[]>([])
+  const [hands, setHands] = useState<Hand[]>([])
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
-  const players = gamePlayers.map(gp => ({
-    id: gp.player_id,
-    display_name: gp.player.display_name,
-    seat_position: gp.seat_position,
-  }))
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient()
+      const [gameRes, gpRes, handsRes] = await Promise.all([
+        supabase.from('games').select('*').eq('id', id).single(),
+        supabase.from('game_players').select('*, player:players(*)').eq('game_id', id).order('seat_position'),
+        supabase.from('hands').select('*').eq('game_id', id).order('hand_number'),
+      ])
+
+      if (!gameRes.data) { setNotFound(true); setLoading(false); return }
+
+      setGame(gameRes.data)
+      setPlayers(
+        (gpRes.data ?? []).map((gp: any) => ({
+          id: gp.player_id,
+          display_name: gp.player.display_name,
+          seat_position: gp.seat_position,
+        }))
+      )
+      setHands(handsRes.data ?? [])
+      setLoading(false)
+    }
+    load()
+  }, [id])
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center text-gray-400">Laden…</div>
+  )
+
+  if (notFound || !game) return (
+    <div className="min-h-screen flex items-center justify-center text-gray-400">Potje niet gevonden.</div>
+  )
 
   const title = game.name || `Potje ${game.played_at}`
 
@@ -38,15 +72,9 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           </span>
         }
       />
-
       <div className="pb-4">
-        <Scoreboard
-          game={game}
-          initialHands={hands}
-          players={players}
-        />
+        <Scoreboard game={game} initialHands={hands} players={players} />
       </div>
-
       <BottomNav />
     </div>
   )
