@@ -51,6 +51,19 @@ export async function createGame(input: {
   return data
 }
 
+export async function deleteGame(id: string): Promise<void> {
+  const supabase = await createClient()
+  // Delete child records first (in case FK cascade is not set)
+  await supabase.from('roem_entries').delete().in(
+    'hand_id',
+    (await supabase.from('hands').select('id').eq('game_id', id)).data?.map(h => h.id) ?? []
+  )
+  await supabase.from('hands').delete().eq('game_id', id)
+  await supabase.from('game_players').delete().eq('game_id', id)
+  const { error } = await supabase.from('games').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function completeGame(id: string): Promise<void> {
   const supabase = await createClient()
   const { error } = await supabase

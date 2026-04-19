@@ -5,6 +5,7 @@ import { getActiveGame, getRecentGames } from '@/lib/db/games'
 import { getIndividualStats } from '@/lib/db/stats'
 import { signOut } from '@/app/auth/actions'
 import BottomNav from '@/components/ui/BottomNav'
+import DeleteGameButton from '@/components/game/DeleteGameButton'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -101,26 +102,28 @@ export default async function DashboardPage() {
             <h3 className="text-sm font-medium text-gray-400 mb-2">Recente potjes</h3>
             <div className="space-y-2">
               {recentGames.map(game => (
-                <Link
-                  key={game.id}
-                  href={`/games/${game.id}`}
-                  className="flex items-center justify-between p-3 bg-gray-900 hover:bg-gray-800 rounded-lg border border-gray-800 transition-colors"
-                >
-                  <div>
-                    <p className="font-medium text-sm">{game.name || `Potje ${game.played_at}`}</p>
-                    <p className="text-xs text-gray-500">{game.played_at} · {game.variant}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      game.status === 'active' ? 'bg-green-900 text-green-300' :
-                      game.status === 'completed' ? 'bg-gray-800 text-gray-400' :
-                      'bg-red-900 text-red-400'
-                    }`}>
-                      {game.status === 'active' ? 'Actief' : game.status === 'completed' ? 'Klaar' : 'Gestopt'}
-                    </span>
-                    <span className="text-gray-600">→</span>
-                  </div>
-                </Link>
+                <div key={game.id} className="flex items-center gap-1 bg-gray-900 rounded-lg border border-gray-800">
+                  <Link
+                    href={`/games/${game.id}`}
+                    className="flex flex-1 items-center justify-between p-3 hover:bg-gray-800 rounded-l-lg transition-colors"
+                  >
+                    <div>
+                      <p className="font-medium text-sm">{game.name || `Potje ${game.played_at}`}</p>
+                      <p className="text-xs text-gray-500">{game.played_at} · {game.variant}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        game.status === 'active' ? 'bg-green-900 text-green-300' :
+                        game.status === 'completed' ? 'bg-gray-800 text-gray-400' :
+                        'bg-red-900 text-red-400'
+                      }`}>
+                        {game.status === 'active' ? 'Actief' : game.status === 'completed' ? 'Klaar' : 'Gestopt'}
+                      </span>
+                      <span className="text-gray-600">→</span>
+                    </div>
+                  </Link>
+                  <DeleteGameButton gameId={game.id} />
+                </div>
               ))}
             </div>
           </section>
