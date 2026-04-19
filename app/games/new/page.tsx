@@ -94,7 +94,7 @@ function NewGameForm() {
       const { error: gpErr } = await supabase.from('game_players').insert(seatAssignments)
       if (gpErr) throw gpErr
 
-      router.push(`/games/${game.id}`)
+      window.location.href = `/games/${game.id}`
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Er is een fout opgetreden')
       setLoading(false)
