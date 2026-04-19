@@ -7,17 +7,15 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node -e \"const fs=require('fs');fs.rmSync('.vercel/output',{recursive:true,force:true});fs.cpSync('.next/output','.vercel/output',{recursive:true})\"",
+    "build": "next build",
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@next-community/adapter-vercel": "^0.0.1-beta.19",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.3",
-    "@vercel/build-utils": "^13.19.0",
     "canvas-confetti": "^1.9.4",
     "next": "16.2.4",
     "react": "19.2.4",
