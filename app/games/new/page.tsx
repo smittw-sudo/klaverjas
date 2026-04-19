@@ -22,6 +22,8 @@ function NewGameForm() {
   const [sessions, setSessions] = useState<Array<{ id: string; name: string }>>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [newPlayerName, setNewPlayerName] = useState('')
+  const [addingPlayer, setAddingPlayer] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -32,6 +34,23 @@ function NewGameForm() {
       if (data) setSessions(data)
     })
   }, [])
+
+  async function handleAddPlayer(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newPlayerName.trim()) return
+    setAddingPlayer(true)
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('players')
+      .insert({ display_name: newPlayerName.trim(), is_guest: false })
+      .select()
+      .single()
+    if (!error && data) {
+      setPlayers(prev => [...prev, data].sort((a, b) => a.display_name.localeCompare(b.display_name)))
+      setNewPlayerName('')
+    }
+    setAddingPlayer(false)
+  }
 
   function handleAssign(seat: number, playerId: string) {
     setAssignments(prev => ({ ...prev, [seat]: playerId }))
@@ -151,7 +170,26 @@ function NewGameForm() {
 
           {/* Player assignment */}
           <section>
-            <h3 className="text-sm font-semibold text-gray-300 mb-4">Spelers opstellen</h3>
+            <h3 className="text-sm font-semibold text-gray-300 mb-3">Spelers opstellen</h3>
+
+            {/* Inline add player */}
+            <form onSubmit={handleAddPlayer} className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={newPlayerName}
+                onChange={e => setNewPlayerName(e.target.value)}
+                placeholder="Nieuwe speler toevoegen…"
+                className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none focus:border-green-500"
+              />
+              <button
+                type="submit"
+                disabled={addingPlayer || !newPlayerName.trim()}
+                className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                {addingPlayer ? '…' : '+ Toevoegen'}
+              </button>
+            </form>
+
             <Table
               players={players}
               assignments={assignments}
