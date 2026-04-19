@@ -2,9 +2,12 @@
   "name": "klaverjas",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node -e \"require('fs').cpSync('.next/output','.vercel/output',{recursive:true})\"",
+    "build": "next build && node -e \"const fs=require('fs');fs.rmSync('.vercel/output',{recursive:true,force:true});fs.cpSync('.next/output','.vercel/output',{recursive:true})\"",
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
