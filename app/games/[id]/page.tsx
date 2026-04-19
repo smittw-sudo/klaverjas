@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { use, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PageHeader from '@/components/ui/PageHeader'
 import Scoreboard from '@/components/game/Scoreboard'
@@ -14,8 +13,8 @@ interface Player {
   seat_position: number
 }
 
-export default function GamePage() {
-  const { id } = useParams<{ id: string }>()
+export default function GamePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const [game, setGame] = useState<Game | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [hands, setHands] = useState<Hand[]>([])
