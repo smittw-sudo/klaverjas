@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node -e \"if(process.env.VERCEL){const fs=require('fs');fs.rmSync('/vercel/output',{recursive:true,force:true});fs.cpSync('.next/output','/vercel/output',{recursive:true,dereference:true})}\"",
+    "build": "next build",
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
