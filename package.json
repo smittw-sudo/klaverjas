@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node -e \"if(process.env.VERCEL){const fs=require('fs');const cfg=JSON.parse(fs.readFileSync('.next/output/config.json','utf8'));cfg.routes=cfg.routes.filter(r=>!(r.src==='/.*'&&r.status===404&&!r.continue));fs.writeFileSync('.next/output/config.json',JSON.stringify(cfg));fs.rmSync('/vercel/output',{recursive:true,force:true});fs.cpSync('.next/output','/vercel/output',{recursive:true,dereference:true})}\"",
+    "build": "next build && node -e \"if(process.env.VERCEL){const fs=require('fs');const cfg=JSON.parse(fs.readFileSync('.next/output/config.json','utf8'));cfg.routes=cfg.routes.filter(r=>!(r.src==='/.*'&&r.status===404&&!r.continue&&!r.dest));fs.writeFileSync('.next/output/config.json',JSON.stringify(cfg));fs.rmSync('/vercel/output',{recursive:true,force:true});fs.cpSync('.next/output','/vercel/output',{recursive:true,dereference:true})}\"",
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
