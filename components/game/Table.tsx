@@ -45,8 +45,8 @@ export default function Table({ players, assignments, onAssign }: TableProps) {
     <div className="space-y-4">
       {/* Team header */}
       <div className="grid grid-cols-2 gap-2 text-center text-xs font-semibold">
-        <div className="py-1.5 rounded-lg bg-blue-950 text-blue-300 border border-blue-800">Team A · S1 & S3</div>
-        <div className="py-1.5 rounded-lg bg-orange-950 text-orange-300 border border-orange-800">Team B · S2 & S4</div>
+        <div className="py-1.5 rounded-lg bg-blue-950 text-blue-300 border border-blue-800">Wij · S1 & S3</div>
+        <div className="py-1.5 rounded-lg bg-orange-950 text-orange-300 border border-orange-800">Zij · S2 & S4</div>
       </div>
 
       {/* 2x2 seat grid */}

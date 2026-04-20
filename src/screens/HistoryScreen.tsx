@@ -17,8 +17,8 @@ function formatDate(dateStr: string) {
 }
 
 function GameCard({ game }: { game: GameWithPlayers }) {
-  const teamALabel = game.teamA.join(' & ') || 'Team A'
-  const teamBLabel = game.teamB.join(' & ') || 'Team B'
+  const teamALabel = game.teamA.join(' & ') || 'Wij'
+  const teamBLabel = game.teamB.join(' & ') || 'Zij'
   const aWins = game.handCount > 0 && game.teamAScore > game.teamBScore
   const bWins = game.handCount > 0 && game.teamBScore > game.teamAScore
 

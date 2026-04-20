@@ -40,8 +40,8 @@ export default function Scoreboard({ game, initialHands, players }: Props) {
   const teamBTotal = hands.reduce((s, h) => s + h.team_b_eindpunten, 0)
   const teamA = players.filter(p => p.seat_position === 1 || p.seat_position === 3)
   const teamB = players.filter(p => p.seat_position === 2 || p.seat_position === 4)
-  const teamALabel = teamA.map(p => p.display_name).join(' & ')
-  const teamBLabel = teamB.map(p => p.display_name).join(' & ')
+  const teamANames = teamA.map(p => p.display_name).join(' & ')
+  const teamBNames = teamB.map(p => p.display_name).join(' & ')
   const isTeamA = (seat: number) => seat === 1 || seat === 3
 
   const individualTotals = players.map(p => ({
@@ -76,20 +76,22 @@ export default function Scoreboard({ game, initialHands, players }: Props) {
     blocks.push(handDataWithCum.slice(i, i + 4))
   }
 
-  const teamAShort = teamALabel.split(' & ')[0]
-  const teamBShort = teamBLabel.split(' & ')[0]
+  const teamAShort = 'Wij'
+  const teamBShort = 'Zij'
 
   return (
     <div className="space-y-4">
       {/* Totaalstand */}
       <div className="grid grid-cols-2 gap-3 px-4 pt-4">
         <div className={`bg-gray-900 rounded-xl p-4 border-2 ${teamATotal > teamBTotal ? 'border-blue-500' : 'border-gray-700'}`}>
-          <p className="text-xs text-blue-400 font-medium truncate">{teamALabel}</p>
+          <p className="text-sm text-blue-400 font-bold">Wij</p>
           <p className="text-3xl font-bold font-mono mt-1">{teamATotal}</p>
+          <p className="text-[11px] text-gray-500 mt-0.5 truncate">{teamANames}</p>
         </div>
         <div className={`bg-gray-900 rounded-xl p-4 border-2 ${teamBTotal > teamATotal ? 'border-orange-500' : 'border-gray-700'}`}>
-          <p className="text-xs text-orange-400 font-medium truncate">{teamBLabel}</p>
+          <p className="text-sm text-orange-400 font-bold">Zij</p>
           <p className="text-3xl font-bold font-mono mt-1">{teamBTotal}</p>
+          <p className="text-[11px] text-gray-500 mt-0.5 truncate">{teamBNames}</p>
         </div>
       </div>
 
@@ -117,9 +119,9 @@ export default function Scoreboard({ game, initialHands, players }: Props) {
               <span className="text-orange-400">{teamBShort}</span>
               <span className="text-gray-600 ml-1">krt</span>
             </span>
-            <span className="text-blue-400 shrink-0 w-8 text-right">A</span>
+            <span className="text-blue-400 shrink-0 w-8 text-right">Wij</span>
             <span className="text-gray-600 shrink-0">|</span>
-            <span className="text-orange-400 shrink-0 w-8">B</span>
+            <span className="text-orange-400 shrink-0 w-8">Zij</span>
           </div>
 
           {blocks.map((block, bi) => {
@@ -187,7 +189,7 @@ export default function Scoreboard({ game, initialHands, players }: Props) {
           <p className="text-2xl mb-1">🎉</p>
           <p className="font-bold text-green-300">Potje afgelopen!</p>
           <p className="text-sm text-green-400 mt-1">
-            Winnaar: {teamATotal > teamBTotal ? teamALabel : teamBLabel}
+            Winnaar: {teamATotal > teamBTotal ? `Wij (${teamANames})` : `Zij (${teamBNames})`}
           </p>
         </div>
       )}
