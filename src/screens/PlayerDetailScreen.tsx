@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams, Link } from 'react-router-dom'
 import PageHeader from '@/components/ui/PageHeader'
 import BottomNav from '@/components/ui/BottomNav'
 import { getIndividualStats, getDuoStats } from '@/lib/db/stats'
@@ -25,52 +25,64 @@ export default function PlayerDetailScreen() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function load() {
-      const [all, allDuos, ses] = await Promise.all([
-        getIndividualStats(playerId, sessionId),
-        getDuoStats(sessionId),
-        getSessions(),
-      ])
+    setLoading(true)
+    Promise.all([
+      getIndividualStats(playerId, sessionId),
+      getDuoStats(sessionId),
+      getSessions(),
+    ]).then(([all, allDuos, ses]) => {
       setStats(all[0] ?? null)
-      setDuos(allDuos.filter(d => d.playerAId === playerId || d.playerBId === playerId))
+      setDuos(allDuos.filter(d => d.playerAId === playerId || d.playerBId === playerId).sort((a, b) => b.avgPoints - a.avgPoints))
       setSessions(ses)
       setLoading(false)
-    }
-    load()
+    })
   }, [playerId, sessionId])
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Laden…</div>
-  if (!stats) return <div className="min-h-screen flex items-center justify-center text-gray-400">Speler niet gevonden.</div>
 
-  const bestPartner = duos.sort((a, b) => b.avgPoints - a.avgPoints)[0]
-  const worstNat = duos.sort((a, b) => b.natPct - a.natPct)[0]
-  const sortedDuos = [...duos].sort((a, b) => b.avgPoints - a.avgPoints)
+  const backHref = sessionId ? `/sessions/${sessionId}/stats` : '/stats'
+
+  if (!stats) return (
+    <div className="min-h-screen pb-20">
+      <PageHeader title="Speler" backHref={backHref} />
+      <div className="flex items-center justify-center pt-20 text-gray-500">
+        <div className="text-center">
+          <p className="text-4xl mb-3">📊</p>
+          <p>Nog geen afgesloten potjes.</p>
+          <p className="text-xs text-gray-600 mt-1">Statistieken verschijnen na het eerste volledige potje.</p>
+        </div>
+      </div>
+      <BottomNav />
+    </div>
+  )
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title={stats.displayName} backHref="/stats" />
+      <PageHeader title={stats.displayName} backHref={backHref} />
 
       <main className="px-4 py-4 max-w-lg mx-auto space-y-5">
         {/* Sessie filter */}
         {sessions.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-1">
-            <a href={`/players/${playerId}`} className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${!sessionId ? 'bg-green-700 text-white' : 'bg-gray-800 text-gray-400'}`}>
+            <Link to={`/players/${playerId}`} className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${!sessionId ? 'bg-green-700 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
               Alle tijd
-            </a>
+            </Link>
             {sessions.map(s => (
-              <a key={s.id} href={`/players/${playerId}?session=${s.id}`} className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${sessionId === s.id ? 'bg-green-700 text-white' : 'bg-gray-800 text-gray-400'}`}>
+              <Link key={s.id} to={`/players/${playerId}?session=${s.id}`} className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${sessionId === s.id ? 'bg-green-700 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
                 {s.name}
-              </a>
+              </Link>
             ))}
           </div>
         )}
 
-        {/* Hoofdstatistieken */}
+        {/* Hoofdcijfers */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 col-span-2">
             <p className="text-xs text-gray-500 mb-1">Totaal punten</p>
             <p className="text-4xl font-bold font-mono">{stats.totalPoints}</p>
-            <p className="text-xs text-gray-500 mt-1">{stats.handsPlayed} handjes gespeeld</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {stats.gamesCompleted} afgesloten potje{stats.gamesCompleted !== 1 ? 's' : ''} · gem. {stats.avgPointsPerGame}/potje
+            </p>
           </div>
 
           <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
@@ -79,28 +91,31 @@ export default function PlayerDetailScreen() {
             <p className={`text-sm mt-1 font-semibold ${stats.natPct > 30 ? 'text-red-400' : stats.natPct > 20 ? 'text-yellow-400' : 'text-green-400'}`}>
               {stats.natPct}% nat
             </p>
+            <p className="text-xs text-gray-500 mt-0.5">{stats.avgNatsPerGame} nat/potje</p>
           </div>
 
           <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
             <p className="text-xs text-gray-500 mb-1">Pits</p>
-            <p className="text-2xl font-bold text-yellow-400">{stats.pitsAsTrumpMaker + stats.pitsAsMaat}×</p>
-            <p className="text-xs text-gray-500 mt-1">
-              {stats.pitsAsTrumpMaker}× als maker · {stats.pitsAsMaat}× als maat
-            </p>
+            <p className="text-2xl font-bold text-yellow-400">{stats.pitsTotal}×</p>
+            <p className="text-xs text-gray-500 mt-1">{stats.avgPitsPerGame} pit/potje</p>
           </div>
         </div>
 
-        {/* Troef-overzicht */}
+        {/* Troef details */}
         <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
-          <p className="text-sm font-semibold text-gray-300 mb-3">Troef maken</p>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-gray-500 text-xs mb-1">Gewonnen</p>
-              <p className="text-green-400 font-bold text-lg">{stats.troefWon}×</p>
+          <p className="text-sm font-semibold text-gray-300 mb-3">Als troef-maker</p>
+          <div className="grid grid-cols-3 gap-3 text-sm">
+            <div className="text-center">
+              <p className="text-gray-500 text-xs mb-1">Gemaakt</p>
+              <p className="font-bold text-lg">{stats.troefMade}</p>
             </div>
-            <div>
-              <p className="text-gray-500 text-xs mb-1">NAT gegaan</p>
-              <p className="text-red-400 font-bold text-lg">{stats.troefNat}×</p>
+            <div className="text-center">
+              <p className="text-gray-500 text-xs mb-1">Gewonnen</p>
+              <p className="text-green-400 font-bold text-lg">{stats.troefMade - stats.troefNat}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-gray-500 text-xs mb-1">NAT</p>
+              <p className="text-red-400 font-bold text-lg">{stats.troefNat}</p>
             </div>
           </div>
           {stats.favoriteTrump && (
@@ -113,29 +128,36 @@ export default function PlayerDetailScreen() {
           )}
         </div>
 
-        {/* Duo-statistieken */}
-        {sortedDuos.length > 0 && (
+        {/* Koppel-stats */}
+        {duos.length > 0 && (
           <div>
             <p className="text-sm font-semibold text-gray-300 mb-2">Als koppel</p>
             <div className="space-y-2">
-              {sortedDuos.map(duo => {
-                const partner = duo.playerAId === playerId ? duo.playerBName : duo.playerAName
+              {duos.map(duo => {
+                const partnerName = duo.playerAId === playerId ? duo.playerBName : duo.playerAName
+                const partnerId = duo.playerAId === playerId ? duo.playerBId : duo.playerAId
                 return (
                   <div key={`${duo.playerAId}-${duo.playerBId}`} className="bg-gray-900 rounded-xl p-4 border border-gray-800">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">🤝</span>
-                        <span className="font-semibold">{partner}</span>
+                        <Link to={`/players/${partnerId}${sessionId ? `?session=${sessionId}` : ''}`} className="font-semibold text-blue-400 hover:text-blue-300">
+                          {partnerName}
+                        </Link>
                       </div>
-                      <span className="font-mono font-bold text-lg">{duo.avgPoints} <span className="text-xs text-gray-500">gem/hand</span></span>
+                      <span className="font-mono font-bold">{duo.avgPoints} <span className="text-xs text-gray-500 font-normal">gem/hand</span></span>
                     </div>
-                    <div className="grid grid-cols-4 gap-2 text-xs">
+                    <div className="grid grid-cols-5 gap-2 text-xs">
                       <div className="text-center">
-                        <p className="font-semibold text-white">{duo.handsPlayed}</p>
-                        <p className="text-gray-500">Handjes</p>
+                        <p className="font-semibold">{duo.gamesCompleted}</p>
+                        <p className="text-gray-500">Potjes</p>
                       </div>
                       <div className="text-center">
-                        <p className="font-semibold text-green-400">{duo.winsAsSpelend}</p>
+                        <p className="font-semibold">{duo.asSpelend}</p>
+                        <p className="text-gray-500">Spelend</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-green-400 font-semibold">{duo.winsAsSpelend}</p>
                         <p className="text-gray-500">Wins</p>
                       </div>
                       <div className="text-center">
@@ -143,7 +165,7 @@ export default function PlayerDetailScreen() {
                         <p className="text-gray-500">Nat%</p>
                       </div>
                       <div className="text-center">
-                        <p className="font-semibold text-yellow-400">{duo.pitsAsSpelend}</p>
+                        <p className="text-yellow-400 font-semibold">{duo.pitsAsSpelend}</p>
                         <p className="text-gray-500">Pits</p>
                       </div>
                     </div>
