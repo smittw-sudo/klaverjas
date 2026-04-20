@@ -71,10 +71,10 @@ export default function ScoreScreen() {
         tegenTeamRoem: tegenRoem,
         kraakMultiplier,
         pit,
+        forcedNat: nat,
         verzaakt,
         verzaaktBySpeelTeam,
       })
-      const finalNat = nat || result.nat
       const teamAEindpunten = spelendIsTeamA ? result.spelendTeamEindpunten : result.tegenTeamEindpunten
       const teamBEindpunten = spelendIsTeamA ? result.tegenTeamEindpunten : result.spelendTeamEindpunten
 
@@ -88,12 +88,12 @@ export default function ScoreScreen() {
           trump_suit: trumpSuit,
           kraak_type: kraakTypeStr,
           kraak_multiplier: kraakMultiplier,
-          spelend_team_kaartpunten: kaartpunten,
+          spelend_team_kaartpunten: result.effectiveKaartpunten,
           spelend_team_seat: trumpMakerSeat,
           spelend_team_roem: spelendRoem,
           tegen_team_roem: tegenRoem,
           spelend_team_roem_afgekeurd: false,
-          nat: finalNat,
+          nat: result.nat,
           pit,
           verzaakt,
           verzaakt_seat: null,

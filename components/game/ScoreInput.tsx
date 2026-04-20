@@ -1,5 +1,4 @@
 
-
 import type { TrumpSuit } from '@/lib/supabase/types'
 import { TRUMP_DISPLAY, ROEM_LABELS } from '@/lib/utils/trumpDisplay'
 import { calculateHandResult, isNatWarning } from '@/lib/game-logic/scoreCalculator'
@@ -35,17 +34,22 @@ export default function ScoreInput({
   verzaaktBySpeelTeam, onVerzaaktBySpeelTeamChange,
 }: Props) {
   const d = TRUMP_DISPLAY[trumpSuit]
-  const tegenKaartpunten = 162 - kaartpunten
+
+  // PIT of NAT: kaartpunten invoer is niet relevant
+  const scoreDisabled = pit || nat || verzaakt
+  const effectiveKaartpunten = pit ? 162 : kaartpunten
+  const tegenKaartpunten = 162 - effectiveKaartpunten
 
   const totalSpelendRoem = spelendRoem + (pit ? 100 : 0)
-  const autoNat = isNatWarning(kaartpunten, totalSpelendRoem, tegenRoem)
+  const autoNat = !pit && !nat && !verzaakt && isNatWarning(kaartpunten, totalSpelendRoem, tegenRoem)
 
   const preview = calculateHandResult({
-    spelendTeamKaartpunten: kaartpunten,
+    spelendTeamKaartpunten: effectiveKaartpunten,
     spelendTeamRoem: spelendRoem,
     tegenTeamRoem: tegenRoem,
     kraakMultiplier,
     pit,
+    forcedNat: nat,
     verzaakt,
     verzaaktBySpeelTeam,
   })
@@ -61,9 +65,12 @@ export default function ScoreInput({
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-3">
           Kaartpunten <span className="text-blue-400">{spelendLabel}</span>
+          {pit && <span className="ml-2 text-yellow-400 text-xs">(PIT = 162 automatisch)</span>}
+          {nat && !pit && <span className="ml-2 text-red-400 text-xs">(NAT = score irrelevant)</span>}
+          {verzaakt && <span className="ml-2 text-orange-400 text-xs">(Verzaakt = score irrelevant)</span>}
         </label>
 
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${scoreDisabled ? 'opacity-40 pointer-events-none' : ''}`}>
           <button
             type="button"
             onClick={() => adjust(-1)}
@@ -71,13 +78,9 @@ export default function ScoreInput({
           >
             −
           </button>
-          <input
-            type="number"
-            value={kaartpunten}
-            onChange={e => onKaartpuntenChange(Math.max(0, Math.min(162, parseInt(e.target.value) || 0)))}
-            inputMode="numeric"
-            className="flex-1 h-14 text-center text-2xl font-bold bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-green-500"
-          />
+          <div className="flex-1 h-14 flex items-center justify-center text-2xl font-bold bg-gray-800 border border-gray-700 rounded-xl text-white">
+            {pit ? '162' : kaartpunten}
+          </div>
           <button
             type="button"
             onClick={() => adjust(1)}
@@ -87,28 +90,31 @@ export default function ScoreInput({
           </button>
         </div>
 
-        <div className="flex gap-3 mt-2">
-          {[70, 82, 100, 120, 140, 162].map(v => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => onKaartpuntenChange(v)}
-              className={`flex-1 py-1.5 text-xs rounded-lg transition-colors ${
-                kaartpunten === v ? 'bg-green-700 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
-
-        <p className="text-sm text-gray-500 mt-2">
-          <span className="text-orange-400">{tegenLabel}</span>: {tegenKaartpunten} kaartpunten
-        </p>
+        {!scoreDisabled && (
+          <>
+            <div className="flex gap-3 mt-2">
+              {[70, 82, 100, 120, 140, 162].map(v => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => onKaartpuntenChange(v)}
+                  className={`flex-1 py-1.5 text-xs rounded-lg transition-colors ${
+                    kaartpunten === v ? 'bg-green-700 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+            <p className="text-sm text-gray-500 mt-2">
+              <span className="text-orange-400">{tegenLabel}</span>: {tegenKaartpunten} kaartpunten
+            </p>
+          </>
+        )}
       </div>
 
-      {/* NAT waarschuwing */}
-      {autoNat && !nat && !verzaakt && (
+      {/* Auto-NAT waarschuwing */}
+      {autoNat && (
         <div className="bg-red-900/50 border border-red-700 rounded-xl p-3 text-sm text-red-300">
           ⚠️ Spelend team haalt te weinig — dit wordt waarschijnlijk NAT
         </div>
@@ -116,20 +122,24 @@ export default function ScoreInput({
 
       {/* Roem samenvatting */}
       {roemEntries.length > 0 && (
-        <div className="bg-gray-900 rounded-xl p-3 border border-gray-800">
-          <p className="text-xs text-gray-500 mb-2">Roem (stap 2):</p>
+        <div className={`bg-gray-900 rounded-xl p-3 border ${verzaakt ? 'border-orange-800 opacity-60' : 'border-gray-800'}`}>
+          <p className="text-xs text-gray-500 mb-2">
+            Roem (stap 2){verzaakt ? ' — telt NIET mee bij verzaking' : ''}:
+          </p>
           {roemEntries.map((e, i) => (
-            <div key={i} className="flex justify-between text-xs py-0.5">
+            <div key={i} className={`flex justify-between text-xs py-0.5 ${verzaakt ? 'line-through text-gray-600' : ''}`}>
               <span className={e.team === 'spelend' ? 'text-blue-400' : 'text-orange-400'}>
                 {e.team === 'spelend' ? spelendLabel : tegenLabel} — {ROEM_LABELS[e.type]}
               </span>
               <span className="text-green-400">+{e.punten}</span>
             </div>
           ))}
-          <div className="mt-1 pt-1 border-t border-gray-800 flex justify-between text-xs text-gray-400">
-            <span>Totaal roem:</span>
-            <span>{spelendLabel}: {spelendRoem} | {tegenLabel}: {tegenRoem}</span>
-          </div>
+          {!verzaakt && (
+            <div className="mt-1 pt-1 border-t border-gray-800 flex justify-between text-xs text-gray-400">
+              <span>Totaal roem:</span>
+              <span>{spelendLabel}: {totalSpelendRoem} | {tegenLabel}: {tegenRoem}</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -139,12 +149,12 @@ export default function ScoreInput({
           <input
             type="checkbox"
             checked={nat}
-            onChange={e => onNatChange(e.target.checked)}
+            onChange={e => { onNatChange(e.target.checked); if (e.target.checked) { onPitChange(false); onVerzaaktChange(false) } }}
             className="w-5 h-5"
           />
           <div>
             <span className="font-semibold text-red-400">NAT</span>
-            <span className="text-sm text-gray-400 ml-2">Spelend team ging nat</span>
+            <span className="text-sm text-gray-400 ml-2">Spelend ging nat — score irrelevant, roem telt</span>
           </div>
         </label>
 
@@ -152,12 +162,12 @@ export default function ScoreInput({
           <input
             type="checkbox"
             checked={pit}
-            onChange={e => onPitChange(e.target.checked)}
+            onChange={e => { onPitChange(e.target.checked); if (e.target.checked) { onNatChange(false); onVerzaaktChange(false) } }}
             className="w-5 h-5"
           />
           <div>
             <span className="font-semibold text-yellow-400">PIT</span>
-            <span className="text-sm text-gray-400 ml-2">Alle 8 slagen → +100 roem</span>
+            <span className="text-sm text-gray-400 ml-2">Alle 8 slagen → 162 krt + 100 roem, score negeren</span>
           </div>
         </label>
 
@@ -165,12 +175,12 @@ export default function ScoreInput({
           <input
             type="checkbox"
             checked={verzaakt}
-            onChange={e => onVerzaaktChange(e.target.checked)}
+            onChange={e => { onVerzaaktChange(e.target.checked); if (e.target.checked) { onNatChange(false); onPitChange(false) } }}
             className="w-5 h-5"
           />
           <div>
             <span className="font-semibold text-orange-400">Verzaakt</span>
-            <span className="text-sm text-gray-400 ml-2">Iemand heeft verzaakt</span>
+            <span className="text-sm text-gray-400 ml-2">Score én roem tellen niet mee</span>
           </div>
         </label>
 

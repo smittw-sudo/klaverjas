@@ -42,8 +42,8 @@ export default function Scoreboard({ game, initialHands, players }: Props) {
   const teamB = players.filter(p => p.seat_position === 2 || p.seat_position === 4)
   const teamALabel = teamA.map(p => p.display_name).join(' & ')
   const teamBLabel = teamB.map(p => p.display_name).join(' & ')
-
   const isTeamA = (seat: number) => seat === 1 || seat === 3
+
   const individualTotals = players.map(p => ({
     ...p,
     total: hands.reduce((s, h) => s + (isTeamA(p.seat_position) ? Math.round(h.team_a_eindpunten / 2) : Math.round(h.team_b_eindpunten / 2)), 0),
@@ -52,8 +52,36 @@ export default function Scoreboard({ game, initialHands, players }: Props) {
   const nextHandNumber = hands.length + 1
   const isComplete = game.status === 'completed' || hands.length >= 16
 
+  // Bereken per hand de kaartpunten en roem per team
+  const handData = hands.map(h => {
+    const spelendIsTeamA = isTeamA(h.spelend_team_seat)
+    const teamAKaart = spelendIsTeamA ? h.spelend_team_kaartpunten : (162 - h.spelend_team_kaartpunten)
+    const teamBKaart = 162 - teamAKaart
+    const teamARoem = spelendIsTeamA ? h.spelend_team_roem : h.tegen_team_roem
+    const teamBRoem = spelendIsTeamA ? h.tegen_team_roem : h.spelend_team_roem
+    return { hand: h, spelendIsTeamA, teamAKaart, teamBKaart, teamARoem, teamBRoem }
+  })
+
+  // Lopende cumulatieve totalen
+  let cumA = 0, cumB = 0
+  const handDataWithCum = handData.map(d => {
+    cumA += d.hand.team_a_eindpunten
+    cumB += d.hand.team_b_eindpunten
+    return { ...d, cumTeamA: cumA, cumTeamB: cumB }
+  })
+
+  // Groepeer in blokken van 4
+  const blocks: typeof handDataWithCum[] = []
+  for (let i = 0; i < handDataWithCum.length; i += 4) {
+    blocks.push(handDataWithCum.slice(i, i + 4))
+  }
+
+  const teamAShort = teamALabel.split(' & ')[0]
+  const teamBShort = teamBLabel.split(' & ')[0]
+
   return (
     <div className="space-y-4">
+      {/* Totaalstand */}
       <div className="grid grid-cols-2 gap-3 px-4 pt-4">
         <div className={`bg-gray-900 rounded-xl p-4 border-2 ${teamATotal > teamBTotal ? 'border-blue-500' : 'border-gray-700'}`}>
           <p className="text-xs text-blue-400 font-medium truncate">{teamALabel}</p>
@@ -76,22 +104,66 @@ export default function Scoreboard({ game, initialHands, players }: Props) {
         </div>
       )}
 
-      {hands.length > 0 ? (
-        <div className="bg-gray-900 rounded-xl mx-4 overflow-hidden border border-gray-800">
-          <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-800 text-xs text-gray-500 font-medium">
-            <span className="w-5">#</span>
-            <span>Troef</span>
-            <span className="flex-1">Score</span>
-            <span className="text-blue-400">A</span>
-            <span className="text-gray-600">|</span>
-            <span className="text-orange-400">B</span>
+      {/* Handjes per blok van 4 */}
+      {hands.length > 0 && (
+        <div className="mx-4 space-y-3">
+          {/* Kolomhoofden */}
+          <div className="flex items-center gap-2 px-3 py-1 text-xs text-gray-500 font-medium">
+            <span className="w-4 shrink-0">#</span>
+            <span className="text-xl opacity-0 shrink-0">·</span>
+            <span className="flex-1 text-center">
+              <span className="text-blue-400">{teamAShort}</span>
+              <span className="text-gray-600"> / </span>
+              <span className="text-orange-400">{teamBShort}</span>
+              <span className="text-gray-600 ml-1">krt</span>
+            </span>
+            <span className="text-blue-400 shrink-0 w-8 text-right">A</span>
+            <span className="text-gray-600 shrink-0">|</span>
+            <span className="text-orange-400 shrink-0 w-8">B</span>
           </div>
-          {hands.map(hand => <HandRow key={hand.id} hand={hand} handNumber={hand.hand_number} />)}
+
+          {blocks.map((block, bi) => {
+            const prevCumA = bi > 0 ? blocks[bi - 1][blocks[bi - 1].length - 1].cumTeamA : 0
+            const prevCumB = bi > 0 ? blocks[bi - 1][blocks[bi - 1].length - 1].cumTeamB : 0
+            const last = block[block.length - 1]
+            const blockSumA = last.cumTeamA - prevCumA
+            const blockSumB = last.cumTeamB - prevCumB
+
+            return (
+              <div key={bi} className="bg-gray-900 rounded-xl overflow-hidden border border-gray-800">
+                <div className="text-xs text-gray-600 px-3 pt-2 pb-0.5 font-medium">
+                  Handjes {bi * 4 + 1}–{bi * 4 + block.length}
+                </div>
+                {block.map(d => (
+                  <HandRow
+                    key={d.hand.id}
+                    hand={d.hand}
+                    isTeamASpelend={d.spelendIsTeamA}
+                    teamAKaart={d.teamAKaart}
+                    teamBKaart={d.teamBKaart}
+                    teamARoem={d.teamARoem}
+                    teamBRoem={d.teamBRoem}
+                    cumTeamA={d.cumTeamA}
+                    cumTeamB={d.cumTeamB}
+                  />
+                ))}
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-800/60 border-t border-gray-700">
+                  <span className="text-xs text-gray-500 flex-1">Blok {bi + 1} subtotaal</span>
+                  <span className={`font-mono text-sm font-bold ${blockSumA > blockSumB ? 'text-blue-300' : 'text-blue-600'}`}>{blockSumA}</span>
+                  <span className="text-gray-600 text-xs">|</span>
+                  <span className={`font-mono text-sm font-bold ${blockSumB > blockSumA ? 'text-orange-300' : 'text-orange-600'}`}>{blockSumB}</span>
+                </div>
+              </div>
+            )
+          })}
         </div>
-      ) : (
+      )}
+
+      {hands.length === 0 && (
         <p className="text-center text-gray-500 text-sm py-4">Nog geen handjes gespeeld</p>
       )}
 
+      {/* Individueel */}
       {hands.length > 0 && (
         <div className="px-4">
           <p className="text-xs text-gray-500 mb-2">Individueel</p>

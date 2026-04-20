@@ -6,6 +6,7 @@ export interface HandInput {
   tegenTeamRoem: number
   kraakMultiplier: KraakMultiplier
   pit: boolean
+  forcedNat?: boolean   // manual NAT override — kaartpunten irrelevant, roem telt wel
   verzaakt: boolean
   verzaaktBySpeelTeam: boolean
 }
@@ -14,43 +15,56 @@ export interface HandResult {
   nat: boolean
   spelendTeamEindpunten: number
   tegenTeamEindpunten: number
+  /** Werkelijk gebruikte kaartpunten (162 bij PIT, 0 bij NAT/Verzaakt door spelend) */
+  effectiveKaartpunten: number
 }
 
 export function calculateHandResult(input: HandInput): HandResult {
   const {
-    spelendTeamKaartpunten,
     spelendTeamRoem: spelendRoemRaw,
     tegenTeamRoem,
     kraakMultiplier,
     pit,
+    forcedNat = false,
     verzaakt,
     verzaaktBySpeelTeam,
   } = input
 
-  const tegenKaartpunten = 162 - spelendTeamKaartpunten
+  // PIT: spelend team wint alle 8 slagen → kaartpunten = 162, +100 roem
+  const effectiveKaartpunten = pit ? 162 : input.spelendTeamKaartpunten
   const spelendTeamRoem = spelendRoemRaw + (pit ? 100 : 0)
 
-  // Verzaakt door spelend team → directe nat
+  // Verzaakt: roem telt NIET mee voor beide teams
   if (verzaakt && verzaaktBySpeelTeam) {
+    return {
+      nat: true,
+      spelendTeamEindpunten: 0,
+      tegenTeamEindpunten: 162 * kraakMultiplier,
+      effectiveKaartpunten: 0,
+    }
+  }
+  if (verzaakt && !verzaaktBySpeelTeam) {
+    return {
+      nat: false,
+      spelendTeamEindpunten: 262 * kraakMultiplier,
+      tegenTeamEindpunten: 0,
+      effectiveKaartpunten: 162,
+    }
+  }
+
+  // Forced NAT (manual): roem telt wel, kaartpunten irrelevant
+  if (forcedNat) {
     const totalRoem = spelendTeamRoem + tegenTeamRoem
     return {
       nat: true,
       spelendTeamEindpunten: 0,
       tegenTeamEindpunten: (162 + totalRoem) * kraakMultiplier,
+      effectiveKaartpunten: 0,
     }
   }
 
-  // Verzaakt door tegenpartij → 262 × multiplier + alle roem → spelend
-  if (verzaakt && !verzaaktBySpeelTeam) {
-    const totalRoem = spelendTeamRoem + tegenTeamRoem
-    return {
-      nat: false,
-      spelendTeamEindpunten: (262 + totalRoem) * kraakMultiplier,
-      tegenTeamEindpunten: 0,
-    }
-  }
-
-  const spelendTotaal = spelendTeamKaartpunten + spelendTeamRoem
+  const tegenKaartpunten = 162 - effectiveKaartpunten
+  const spelendTotaal = effectiveKaartpunten + spelendTeamRoem
   const tegenTotaal = tegenKaartpunten + tegenTeamRoem
 
   // Nat: spelend ≤ tegen (inclusief gelijkstand)
@@ -62,6 +76,7 @@ export function calculateHandResult(input: HandInput): HandResult {
       nat: true,
       spelendTeamEindpunten: 0,
       tegenTeamEindpunten: (162 + totalRoem) * kraakMultiplier,
+      effectiveKaartpunten: 0,
     }
   }
 
@@ -69,6 +84,7 @@ export function calculateHandResult(input: HandInput): HandResult {
     nat: false,
     spelendTeamEindpunten: spelendTotaal * kraakMultiplier,
     tegenTeamEindpunten: tegenTotaal * kraakMultiplier,
+    effectiveKaartpunten,
   }
 }
 
