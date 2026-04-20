@@ -82,18 +82,56 @@ export default function Scoreboard({ game, initialHands, players }: Props) {
   return (
     <div className="space-y-4">
       {/* Totaalstand */}
-      <div className="grid grid-cols-2 gap-3 px-4 pt-4">
-        <div className={`bg-gray-900 rounded-xl p-4 border-2 ${teamATotal > teamBTotal ? 'border-blue-500' : 'border-gray-700'}`}>
-          <p className="text-sm text-blue-400 font-bold">Wij</p>
-          <p className="text-3xl font-bold font-mono mt-1">{teamATotal}</p>
-          <p className="text-[11px] text-gray-500 mt-0.5 truncate">{teamANames}</p>
-        </div>
-        <div className={`bg-gray-900 rounded-xl p-4 border-2 ${teamBTotal > teamATotal ? 'border-orange-500' : 'border-gray-700'}`}>
-          <p className="text-sm text-orange-400 font-bold">Zij</p>
-          <p className="text-3xl font-bold font-mono mt-1">{teamBTotal}</p>
-          <p className="text-[11px] text-gray-500 mt-0.5 truncate">{teamBNames}</p>
-        </div>
-      </div>
+      {(() => {
+        const diff = Math.abs(teamATotal - teamBTotal)
+        const aLeads = teamATotal > teamBTotal
+        const bLeads = teamBTotal > teamATotal
+        return (
+          <div className="px-4 pt-4">
+            <div className="flex items-stretch gap-2">
+              {/* Wij */}
+              <div className={`flex-1 rounded-2xl p-4 border-2 transition-all ${
+                aLeads
+                  ? 'bg-blue-950/80 border-blue-500 shadow-lg shadow-blue-900/30'
+                  : 'bg-gray-900 border-gray-700'
+              }`}>
+                <p className={`text-xs font-bold uppercase tracking-widest ${aLeads ? 'text-blue-400' : 'text-gray-500'}`}>Wij</p>
+                <p className={`font-bold font-mono leading-none mt-1 ${aLeads ? 'text-4xl text-white' : 'text-3xl text-gray-300'}`}>
+                  {teamATotal}
+                </p>
+                <p className="text-[10px] text-gray-500 mt-1 truncate">{teamANames}</p>
+              </div>
+
+              {/* Midden: verschil of gelijkstand */}
+              <div className="flex flex-col items-center justify-center gap-1 shrink-0 w-12">
+                {hands.length > 0 && diff > 0 ? (
+                  <>
+                    <span className={`text-xs font-bold ${aLeads ? 'text-blue-400' : 'text-orange-400'}`}>
+                      {aLeads ? '▲' : '▼'}
+                    </span>
+                    <span className="text-sm font-bold font-mono text-white">{diff}</span>
+                  </>
+                ) : (
+                  <span className="text-xs text-gray-600">vs</span>
+                )}
+              </div>
+
+              {/* Zij */}
+              <div className={`flex-1 rounded-2xl p-4 border-2 transition-all ${
+                bLeads
+                  ? 'bg-orange-950/80 border-orange-500 shadow-lg shadow-orange-900/30'
+                  : 'bg-gray-900 border-gray-700'
+              }`}>
+                <p className={`text-xs font-bold uppercase tracking-widest ${bLeads ? 'text-orange-400' : 'text-gray-500'}`}>Zij</p>
+                <p className={`font-bold font-mono leading-none mt-1 ${bLeads ? 'text-4xl text-white' : 'text-3xl text-gray-300'}`}>
+                  {teamBTotal}
+                </p>
+                <p className="text-[10px] text-gray-500 mt-1 truncate">{teamBNames}</p>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {!isComplete && game.status === 'active' && (
         <div className="px-4">

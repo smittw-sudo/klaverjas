@@ -143,56 +143,64 @@ export default function ScoreInput({
         </div>
       )}
 
-      {/* Vlaggen */}
+      {/* Vlaggen — grote toggle-knoppen */}
       <div className="space-y-2">
-        <label className="flex items-center gap-3 cursor-pointer py-3 px-4 bg-gray-900 rounded-xl border border-gray-800">
-          <input
-            type="checkbox"
-            checked={nat}
-            onChange={e => { onNatChange(e.target.checked); if (e.target.checked) { onPitChange(false); onVerzaaktChange(false) } }}
-            className="w-5 h-5"
-          />
-          <div>
-            <span className="font-semibold text-red-400">NAT</span>
-            <span className="text-sm text-gray-400 ml-2">Spelend ging nat — score irrelevant, roem telt</span>
-          </div>
-        </label>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Bijzonderheden</p>
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => { onNatChange(!nat); if (!nat) { onPitChange(false); onVerzaaktChange(false) } }}
+            className={`flex flex-col items-center justify-center gap-1 py-4 rounded-2xl border-2 font-bold transition-all active:scale-95 min-h-[80px] ${
+              nat
+                ? 'bg-red-600 border-red-400 text-white shadow-lg shadow-red-900/50'
+                : 'bg-gray-900 border-gray-700 text-red-400 hover:border-red-800'
+            }`}
+          >
+            <span className="text-2xl">💦</span>
+            <span className="text-sm tracking-wide">NAT</span>
+          </button>
 
-        <label className="flex items-center gap-3 cursor-pointer py-3 px-4 bg-gray-900 rounded-xl border border-gray-800">
-          <input
-            type="checkbox"
-            checked={pit}
-            onChange={e => { onPitChange(e.target.checked); if (e.target.checked) { onNatChange(false); onVerzaaktChange(false) } }}
-            className="w-5 h-5"
-          />
-          <div>
-            <span className="font-semibold text-yellow-400">PIT</span>
-            <span className="text-sm text-gray-400 ml-2">Alle 8 slagen → 162 krt + 100 roem, score negeren</span>
-          </div>
-        </label>
+          <button
+            type="button"
+            onClick={() => { onPitChange(!pit); if (!pit) { onNatChange(false); onVerzaaktChange(false) } }}
+            className={`flex flex-col items-center justify-center gap-1 py-4 rounded-2xl border-2 font-bold transition-all active:scale-95 min-h-[80px] ${
+              pit
+                ? 'bg-yellow-500 border-yellow-300 text-gray-900 shadow-lg shadow-yellow-900/50'
+                : 'bg-gray-900 border-gray-700 text-yellow-400 hover:border-yellow-800'
+            }`}
+          >
+            <span className="text-2xl">⭐</span>
+            <span className="text-sm tracking-wide">PIT</span>
+          </button>
 
-        <label className="flex items-center gap-3 cursor-pointer py-3 px-4 bg-gray-900 rounded-xl border border-gray-800">
-          <input
-            type="checkbox"
-            checked={verzaakt}
-            onChange={e => { onVerzaaktChange(e.target.checked); if (e.target.checked) { onNatChange(false); onPitChange(false) } }}
-            className="w-5 h-5"
-          />
-          <div>
-            <span className="font-semibold text-orange-400">Verzaakt</span>
-            <span className="text-sm text-gray-400 ml-2">Score én roem tellen niet mee</span>
-          </div>
-        </label>
+          <button
+            type="button"
+            onClick={() => { onVerzaaktChange(!verzaakt); if (!verzaakt) { onNatChange(false); onPitChange(false) } }}
+            className={`flex flex-col items-center justify-center gap-1 py-4 rounded-2xl border-2 font-bold transition-all active:scale-95 min-h-[80px] ${
+              verzaakt
+                ? 'bg-orange-600 border-orange-400 text-white shadow-lg shadow-orange-900/50'
+                : 'bg-gray-900 border-gray-700 text-orange-400 hover:border-orange-800'
+            }`}
+          >
+            <span className="text-2xl">✋</span>
+            <span className="text-sm tracking-wide">VERZAAKT</span>
+          </button>
+        </div>
+
+        {/* Subtekst onder actieve vlag */}
+        {nat && <p className="text-xs text-red-400 text-center">Score irrelevant — roem telt wel</p>}
+        {pit && <p className="text-xs text-yellow-400 text-center">Alle 8 slagen → 162 krt + 100 roem</p>}
+        {verzaakt && <p className="text-xs text-orange-400 text-center">Score én roem tellen niet mee</p>}
 
         {verzaakt && (
-          <div className="ml-4 pl-4 border-l-2 border-orange-700">
-            <p className="text-sm text-gray-400 mb-2">Wie heeft verzaakt?</p>
+          <div className="pt-1">
+            <p className="text-xs text-gray-400 mb-2 text-center">Wie heeft verzaakt?</p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => onVerzaaktBySpeelTeamChange(true)}
-                className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                  verzaaktBySpeelTeam ? 'bg-blue-800 border-2 border-blue-500 text-blue-200' : 'bg-gray-800 border border-gray-700 text-gray-400'
+                className={`py-3 px-3 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
+                  verzaaktBySpeelTeam ? 'bg-blue-700 border-2 border-blue-400 text-white' : 'bg-gray-900 border border-gray-700 text-gray-400'
                 }`}
               >
                 {spelendLabel}
@@ -200,8 +208,8 @@ export default function ScoreInput({
               <button
                 type="button"
                 onClick={() => onVerzaaktBySpeelTeamChange(false)}
-                className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                  !verzaaktBySpeelTeam ? 'bg-orange-800 border-2 border-orange-500 text-orange-200' : 'bg-gray-800 border border-gray-700 text-gray-400'
+                className={`py-3 px-3 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
+                  !verzaaktBySpeelTeam ? 'bg-orange-700 border-2 border-orange-400 text-white' : 'bg-gray-900 border border-gray-700 text-gray-400'
                 }`}
               >
                 {tegenLabel}
