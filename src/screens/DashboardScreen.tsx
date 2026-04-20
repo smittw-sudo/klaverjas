@@ -108,6 +108,13 @@ export default function DashboardScreen() {
             <span className="text-3xl">📅</span>
             <span className="font-semibold text-sm">Nieuwe sessie</span>
           </Link>
+          <Link
+            to="/history"
+            className="flex flex-col items-center gap-2 p-5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-center transition-colors col-span-2"
+          >
+            <span className="text-3xl">📜</span>
+            <span className="font-semibold text-sm">Geschiedenis</span>
+          </Link>
         </div>
 
         {recentGames.length > 0 && (

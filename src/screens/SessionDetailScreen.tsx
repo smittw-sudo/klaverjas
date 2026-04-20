@@ -49,9 +49,14 @@ export default function SessionDetailScreen() {
         title={session.name}
         backHref="/sessions"
         action={
-          <Link to={`/sessions/${sessionId}/stats`} className="text-sm text-gray-400 hover:text-white px-2 py-1">
-            Stats
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to={`/sessions/${sessionId}/history`} className="text-sm text-gray-400 hover:text-white px-2 py-1">
+              Potjes
+            </Link>
+            <Link to={`/sessions/${sessionId}/stats`} className="text-sm text-gray-400 hover:text-white px-2 py-1">
+              Stats
+            </Link>
+          </div>
         }
       />
 

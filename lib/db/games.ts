@@ -51,6 +51,83 @@ export async function deleteGame(id: string): Promise<void> {
   if (error) throw error
 }
 
+export interface GameWithPlayers extends Game {
+  teamA: string[]   // display names seats 1&3
+  teamB: string[]   // display names seats 2&4
+  handCount: number
+  teamAScore: number
+  teamBScore: number
+}
+
+export async function getAllGames(sessionId?: string): Promise<GameWithPlayers[]> {
+  const supabase = createClient()
+
+  let q = supabase.from('games').select('*').neq('status', 'abandoned')
+  if (sessionId) q = q.eq('session_id', sessionId)
+  else q = q.is('session_id', null)   // losse potjes op dashboard
+  const { data: games, error } = await q.order('played_at', { ascending: false })
+  if (error || !games?.length) return []
+
+  const gameIds = games.map(g => g.id)
+  const [{ data: gpRows }, { data: handRows }] = await Promise.all([
+    supabase.from('game_players').select('game_id, seat_position, player:players(display_name)').in('game_id', gameIds),
+    supabase.from('hands').select('game_id, team_a_eindpunten, team_b_eindpunten').in('game_id', gameIds),
+  ])
+
+  // Pre-index
+  const gpByGame = new Map<string, typeof gpRows>()
+  for (const gp of gpRows ?? []) {
+    const list = gpByGame.get(gp.game_id) ?? []
+    list.push(gp); gpByGame.set(gp.game_id, list)
+  }
+  const scoreByGame = new Map<string, { a: number; b: number; count: number }>()
+  for (const h of handRows ?? []) {
+    const s = scoreByGame.get(h.game_id) ?? { a: 0, b: 0, count: 0 }
+    s.a += h.team_a_eindpunten; s.b += h.team_b_eindpunten; s.count++
+    scoreByGame.set(h.game_id, s)
+  }
+
+  return games.map(g => {
+    const gps = gpByGame.get(g.id) ?? []
+    const teamA = gps.filter(p => p.seat_position === 1 || p.seat_position === 3).map(p => (p as any).player.display_name)
+    const teamB = gps.filter(p => p.seat_position === 2 || p.seat_position === 4).map(p => (p as any).player.display_name)
+    const score = scoreByGame.get(g.id) ?? { a: 0, b: 0, count: 0 }
+    return { ...g, teamA, teamB, handCount: score.count, teamAScore: score.a, teamBScore: score.b }
+  })
+}
+
+export async function getAllGamesBySession(): Promise<GameWithPlayers[]> {
+  const supabase = createClient()
+  const { data: games } = await supabase.from('games').select('*').neq('status', 'abandoned').order('played_at', { ascending: false })
+  if (!games?.length) return []
+
+  const gameIds = games.map(g => g.id)
+  const [{ data: gpRows }, { data: handRows }] = await Promise.all([
+    supabase.from('game_players').select('game_id, seat_position, player:players(display_name)').in('game_id', gameIds),
+    supabase.from('hands').select('game_id, team_a_eindpunten, team_b_eindpunten').in('game_id', gameIds),
+  ])
+
+  const gpByGame = new Map<string, typeof gpRows>()
+  for (const gp of gpRows ?? []) {
+    const list = gpByGame.get(gp.game_id) ?? []
+    list.push(gp); gpByGame.set(gp.game_id, list)
+  }
+  const scoreByGame = new Map<string, { a: number; b: number; count: number }>()
+  for (const h of handRows ?? []) {
+    const s = scoreByGame.get(h.game_id) ?? { a: 0, b: 0, count: 0 }
+    s.a += h.team_a_eindpunten; s.b += h.team_b_eindpunten; s.count++
+    scoreByGame.set(h.game_id, s)
+  }
+
+  return games.map(g => {
+    const gps = gpByGame.get(g.id) ?? []
+    const teamA = gps.filter(p => p.seat_position === 1 || p.seat_position === 3).map(p => (p as any).player.display_name)
+    const teamB = gps.filter(p => p.seat_position === 2 || p.seat_position === 4).map(p => (p as any).player.display_name)
+    const score = scoreByGame.get(g.id) ?? { a: 0, b: 0, count: 0 }
+    return { ...g, teamA, teamB, handCount: score.count, teamAScore: score.a, teamBScore: score.b }
+  })
+}
+
 export async function getActiveGame(): Promise<Game | null> {
   const supabase = createClient()
   const { data } = await supabase

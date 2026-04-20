@@ -15,6 +15,7 @@ import SessionStatsScreen from './screens/SessionStatsScreen'
 import StatsScreen from './screens/StatsScreen'
 import PlayersScreen from './screens/PlayersScreen'
 import PlayerDetailScreen from './screens/PlayerDetailScreen'
+import HistoryScreen, { SessionHistoryScreen } from './screens/HistoryScreen'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -43,6 +44,8 @@ export default function App() {
         <Route path="/stats" element={<ProtectedRoute><StatsScreen /></ProtectedRoute>} />
         <Route path="/players" element={<ProtectedRoute><PlayersScreen /></ProtectedRoute>} />
         <Route path="/players/:playerId" element={<ProtectedRoute><PlayerDetailScreen /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute><HistoryScreen /></ProtectedRoute>} />
+        <Route path="/sessions/:sessionId/history" element={<ProtectedRoute><SessionHistoryScreen /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   )
